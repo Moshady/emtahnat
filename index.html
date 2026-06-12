@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شركة السوبر للمواصلات </title>
+    <link rel="stylesheet" href="style.css">
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#10b981">
+    <meta name="description" content="نظام حجز حافلات الامتحانات للطلاب - حجز فوري ومؤمن">
+    <link rel="manifest"
+        href="data:application/manifest+json,{%22name%22:%22Exam%20Microbus%22,%22short_name%22:%22ExamBus%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%230a0f1d%22,%22theme_color%22:%22%2310b981%22}">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&family=Outfit:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Icon Library -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase client JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- ChartJS for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2pdf for Ticket export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- QRious for QR codes -->
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+    <!-- QR Scanner -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+
+</head>
+
+<body>
+
+    <!-- Offline Notification Banner -->
+    <div id="offline-bar" class="offline-bar">
+        <span>⚠️ تم قطع الاتصال بالشبكة! يتم تشغيل النظام الآن في وضع عدم الاتصال بالإنترنت.</span>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- ==========================================
+       1. NAVIGATION HEADER
+       ========================================== -->
+    <header class="glass-card">
+        <div class="header-container">
+            <a href="#" class="logo-wrapper" onclick="navigateToPage('landing-page')">
+                <i data-lucide="bus"></i>
+                <h1 id="nav-title"> السوبر للمواصلات</h1>
+            </a>
+
+            <div id="demo-indicator" class="demo-badge" style="display:none;">
+                <span data-localize="demo_mode">وضع التجربة النشط</span>
+            </div>
+
+            <div class="nav-controls">
+                <!-- Lang Selector -->
+                <button class="btn-circle" id="lang-toggle" onclick="toggleLanguage()" title="Switch Language">
+                    AR
+                </button>
+
+                <!-- Theme Toggle -->
+                <button class="btn-circle" id="theme-toggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+                    <i data-lucide="sun"></i>
+                </button>
+
+                <!-- Dynamic Auth Button -->
+                <button class="btn-primary" id="header-auth-btn" onclick="handleHeaderAuthAction()">
+                    <i data-lucide="log-in"></i>
+                    <span data-localize="login">تسجيل دخول </span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==========================================
+       2. LANDING PAGE
+       ========================================== -->
+
+    <div id="landing-page" class="page active">
+        <main>
+            <!-- Hero section -->
+            <section class="hero-section">
+                <div class="hero-text">
+                    <h2 data-localize="hero_title">رحلتك للامتحان بضغطة زر واحدة!</h2>
+                    <p data-localize="hero_desc">احجز كرسيك في العربيه المخصصة لنقل الطلاب مباشرة من وإلى مقرات
+                        اللجان والامتحانات. احجز مبكراً لتضمن مكانك.</p>
+                    <div class="hero-cta">
+                        <button class="btn-primary" onclick="navigateToPage('auth-page')">
+                            <i data-lucide="ticket"></i>
+                            <span data-localize="reserve_seat">احجز مقعدك الآن</span>
+                        </button>
+                        <button class="btn-outline" onclick="scrollToSection('buses-showcase')">
+                            <i data-lucide="info"></i>
+                            <span data-localize="view_buses">عرض العربيات</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="hero-graphics">
+                    <img src="img.png" alt="Bus Illustration" class="bus-illustration"
+                        style="width: 100%; max-width: 500px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+                </div>
+            </section>
+
+            <!-- Exam Transportation Banner & Countdown -->
+            <section class="glass-card countdown-banner">
+                <div class="countdown-info">
+                    <i data-lucide="clock" style="color: var(--accent); font-size: 2.2rem;"></i>
+                    <div>
+                        <h4 id="countdown-title" data-localize="countdown_title">العد التنازلي لبداية لجنة الامتحان
+                            القادمة:</h4>
+                        <p data-localize="countdown_sub">سارع بالحجز قبل اكتمال حمولة الباصات</p>
+                    </div>
+                </div>
+                <div class="countdown-timer">
+                    <div class="countdown-box">
+                        <div class="countdown-num" id="cd-days">00</div>
+                        <div class="countdown-label" data-localize="days">يوم</div>
+                    </div>
+                    <div class="countdown-box">
+                        <div class="countdown-num" id="cd-hours">00</div>
+                        <div class="countdown-label" data-localize="hours">ساعة</div>
+                    </div>
+                    <div class="countdown-box">
+                        <div class="countdown-num" id="cd-mins">00</div>
+                        <div class="countdown-label" data-localize="minutes">دقيقة</div>
+                    </div>
+                    <div class="countdown-box">
+                        <div class="countdown-num" id="cd-secs">00</div>
+                        <div class="countdown-label" data-localize="seconds">ثانية</div>
+                    </div>
+                </div>
+            </section>
+
+
+
+            <!-- Buses Showcase -->
+            <section id="buses-showcase" style="margin-bottom: 60px;">
+                <h3 class="section-title" data-localize="available_buses">عربياتنا المجدولة للامتحان</h3>
+                <div class="bus-cards-grid" id="landing-bus-grid">
+                    <!-- Dynamic rendering of active buses on landing page -->
+                </div>
+            </section>
+            <!-- Statistics Grid -->
+            <section class="stats-grid">
+                <div class="glass-card stat-card">
+                    <i data-lucide="users"></i>
+                    <h3 id="stat-students">450+</h3>
+                    <p data-localize="stat_students_label">طالب نشط</p>
+                </div>
+                <div class="glass-card stat-card">
+                    <i data-lucide="bus"></i>
+                    <h3 id="stat-buses">12</h3>
+                    <p data-localize="stat_buses_label">عربيات حديثة</p>
+                </div>
+                <div class="glass-card stat-card">
+                    <i data-lucide="shield-check"></i>
+                    <h3 id="stat-trips">48</h3>
+                    <p data-localize="stat_trips_label">رحلة آمنة مجدولة</p>
+                </div>
+                <div class="glass-card stat-card">
+                    <i data-lucide="award"></i>
+                    <h3 id="stat-satisfaction">99%</h3>
+                    <p data-localize="stat_satisfaction_label">نسبة رضا الطلاب</p>
+                </div>
+            </section>
+
+            <!-- Instructions Section -->
+            <!-- <section class="instructions-section">
+                <h3 class="section-title" data-localize="how_it_works">كيف تعمل منصة الحجز؟</h3>
+                <div class="instructions-grid">
+                    <div class="glass-card instruction-card">
+                        <div class="instruction-step">1</div>
+                        <h4 data-localize="step1_title">أدخل كود الطالب</h4>
+                        <p data-localize="step1_desc">تحصل على كود الحجز الشخصي من إدارة الكلية أو المشرف المباشر لتسجيل
+                            الدخول.</p>
+                    </div>
+                    <div class="glass-card instruction-card">
+                        <div class="instruction-step">2</div>
+                        <h4 data-localize="step2_title">اختر حافلتك ومقعدك</h4>
+                        <p data-localize="step2_desc">اختر مسار العربيه المناسب لك ونوع الحجز ثم اختر المقعد المفضل لديك
+                            من خريطة Toyota Hiace.</p>
+                    </div>
+                    <div class="glass-card instruction-card">
+                        <div class="instruction-step">3</div>
+                        <h4 data-localize="step3_title">احصل على التذكرة الذكية</h4>
+                        <p data-localize="step3_desc">سيقوم النظام بإصدار تذكرتك الرقمية تحتوي على رمز الاستجابة السريعة
+                            QR لتأكيد الحضور.</p>
+                    </div>
+                </div>
+            </section> -->
+
+
+
+
+
+            <!-- Frequently Asked Questions -->
+            <!-- <section>
+                <h3 class="section-title" data-localize="faqs_title">الأسئلة الشائعة</h3>
+                <div class="faq-accordion">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span data-localize="faq1_q">كيف أحصل على كود حجز الطالب؟</span>
+                            <i data-lucide="chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p data-localize="faq1_a">يتم إنشاء الأكواد وتوزيعها بواسطة شؤون الطلاب أو إدارة النقل
+                                بالكلية. إذا لم يصلك كود، تواصل مع الدعم الفني.</p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span data-localize="faq2_q">كم تبلغ مدة قفل المقعد المؤقت؟</span>
+                            <i data-lucide="chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p data-localize="faq2_a">عند اختيارك لمقعد يتم قفله مؤقتاً باسمك لمدة 3 دقائق لإتاحة الوقت
+                                لإكمال عملية الحجز والدفع. إذا انتهى الوقت دون إتمام الحجز سيتم إلغاء القفل تلقائياً.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span data-localize="faq3_q">هل يمكنني إلغاء الحجز أو تعديله؟</span>
+                            <i data-lucide="chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p data-localize="faq3_a">نعم، يمكنك إلغاء الحجز من شاشة ملفك الشخصي قبل موعد الرحلة بأربعة
+                                وعشرين ساعة كحد أقصى.</p>
+                        </div>
+                    </div>
+                </div>
+            </section> -->
+        </main>
+    </div>
+
+    <!-- ==========================================
+       3. STUDENT AUTHENTICATION PAGE
+       ========================================== -->
+    <div id="auth-page" class="page">
+        <main>
+            <div class="glass-card auth-container" style="max-width: 450px; width: 100%;">
+                <div class="auth-tabs"
+                    style="display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid var(--card-border); padding-bottom: 15px;">
+                    <button id="tab-login" class="btn-primary" style="flex: 1; margin: 0; padding: 10px;"
+                        onclick="switchAuthTab('login')">تسجيل الدخول</button>
+                    <button id="tab-register" class="btn-outline" style="flex: 1; margin: 0; padding: 10px;"
+                        onclick="switchAuthTab('register')">إنشاء حساب جديد</button>
+                </div>
+
+                <!-- LOGIN VIEW -->
+                <div id="auth-login-view">
+                    <i data-lucide="shield-check"
+                        style="font-size: 3rem; color: var(--accent); margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto; text-align: center;"></i>
+                    <h2 style="text-align: center; margin-bottom: 8px;">بوابة تسجيل دخول الطلاب</h2>
+                    <p
+                        style="text-align: center; color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">
+                        أدخل رقم الهاتف وكلمة المرور للوصول لحسابك</p>
+
+                    <div class="form-group">
+                        <label for="student-login-phone">رقم الهاتف</label>
+                        <input type="tel" id="student-login-phone" placeholder="مثال: 01012345678" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="student-login-pass">كلمة المرور</label>
+                        <input type="password" id="student-login-pass" placeholder="••••••••" required>
+                    </div>
+
+                    <button class="btn-primary auth-btn" style="width: 100%; margin-top: 15px;"
+                        onclick="loginStudent()">
+                        <i data-lucide="log-in"></i>
+                        <span>تسجيل الدخول</span>
+                    </button>
+                </div>
+
+                <!-- SIGNUP VIEW -->
+                <div id="auth-register-view" style="display: none;">
+                    <i data-lucide="user-plus"
+                        style="font-size: 3rem; color: var(--accent); margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto; text-align: center;"></i>
+                    <h2 style="text-align: center; margin-bottom: 8px;">إنشاء حساب طالب جديد</h2>
+                    <p
+                        style="text-align: center; color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">
+                        سجل بياناتك وسيمنحك النظام رمز حجز مكون من 4 أرقام</p>
+
+                    <div class="form-group">
+                        <label for="student-register-name">الاسم بالكامل</label>
+                        <input type="text" id="student-register-name" placeholder="مثال: أحمد محمد أحمد" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="student-register-phone">رقم الهاتف</label>
+                        <input type="tel" id="student-register-phone" placeholder="مثال: 01012345678" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="student-register-pass">كلمة المرور</label>
+                        <input type="password" id="student-register-pass" placeholder="••••••••" required>
+                    </div>
+
+                    <button class="btn-primary auth-btn"
+                        style="width: 100%; margin-top: 15px; background: var(--selected);" onclick="registerStudent()">
+                        <i data-lucide="user-plus"></i>
+                        <span>إنشاء حساب وتوليد الكود</span>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ==========================================
+       4. STUDENT PORTAL & BOOKING DASHBOARD
+       ========================================== -->
+    <div id="student-portal-page" class="page">
+        <main>
+            <!-- Student Profile Summary -->
+            <div class="glass-card student-profile-summary">
+                <div class="student-details">
+                    <div class="icon">
+                        <i data-lucide="user"></i>
+                    </div>
+                    <div class="student-info-text">
+                        <h3 id="portal-student-name">شحن البيانات...</h3>
+                        <p><span data-localize="code_label">الكود:</span> <strong
+                                id="portal-student-code">STUD-XXXX</strong></p>
+                    </div>
+                </div>
+                <div class="student-actions">
+                    <button class="btn-outline" onclick="loadStudentBookingHistory()">
+                        <i data-lucide="history"></i>
+                        <span data-localize="history_btn">سجل حجوزاتي</span>
+                    </button>
+                    <button class="btn-outline" style="color:var(--danger); border-color:var(--danger)"
+                        onclick="logoutStudent()">
+                        <i data-lucide="log-out"></i>
+                        <span data-localize="logout_btn">تسجيل الخروج</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Active Ticket Info Card -->
+            <div class="glass-card" id="active-booking-card" style="display:none; padding:30px; margin-bottom: 40px; text-align: center;">
+                <div style="font-size: 3.5rem; color: var(--accent); margin-bottom: 15px;">
+                    <i data-lucide="check-circle-2"></i>
+                </div>
+                <h3 style="margin-bottom: 15px;">لديك حجز مؤكد بالفعل!</h3>
+                <p id="active-booking-desc" style="color: var(--text-secondary); margin-bottom: 25px; line-height: 1.6;">
+                    لقد قمت بحجز مقعدك بنجاح. لا يمكنك حجز أكثر من مقعد واحد في النظام.
+                </p>
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn-primary" onclick="viewActiveReservationTicket()">
+                        <i data-lucide="ticket"></i>
+                        <span>عرض التذكرة الرقمية</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Booking steps -->
+            <div class="glass-card booking-flow-card">
+                <div class="step-indicators">
+                    <div class="step-indicator active" id="ind-step-1">
+                        <span class="step-num">1</span>
+                        <span data-localize="ind_step_1">اختر الرحلة</span>
+                    </div>
+                    <div class="step-indicator" id="ind-step-2">
+                        <span class="step-num">2</span>
+                        <span data-localize="ind_step_2">نوع التذكرة</span>
+                    </div>
+                    <div class="step-indicator" id="ind-step-3">
+                        <span class="step-num">3</span>
+                        <span data-localize="ind_step_3">خريطة المقاعد</span>
+                    </div>
+                </div>
+
+                <!-- Step 1: Select Bus -->
+                <div class="flow-step active" id="step-bus-select">
+                    <h4 style="margin-bottom: 20px;" data-localize="select_bus_head">اختر الباص المتاح للامتحانات:</h4>
+                    <div class="bus-cards-grid" id="portal-bus-grid">
+                        <!-- Dynamic buses list -->
+                    </div>
+                </div>
+
+                <!-- Step 2: Select Ticket Type -->
+                <div class="flow-step" id="step-type-select">
+                    <h4 style="margin-bottom: 20px;" data-localize="select_type_head">حدد مسار ونوع الرحلة:</h4>
+                    <div class="trip-type-grid">
+                        <div class="glass-card trip-type-card selected" onclick="selectTripType('going', this)">
+                            <i data-lucide="arrow-left-right"></i>
+                            <h5 data-localize="trip_going">ذهاب فقط</h5>
+                            <p data-localize="trip_going_sub">إلى لجنة الامتحانات</p>
+                            <span id="price-going-val">00 EGP</span>
+                        </div>
+                        <div class="glass-card trip-type-card" onclick="selectTripType('return', this)">
+                            <i data-lucide="arrow-right-left"></i>
+                            <h5 data-localize="trip_return">عودة فقط</h5>
+                            <p data-localize="trip_return_sub">إلى نقاط التجمع بعد الامتحان</p>
+                            <span id="price-return-val">00 EGP</span>
+                        </div>
+                        <div class="glass-card trip-type-card" onclick="selectTripType('round_trip', this)">
+                            <i data-lucide="refresh-cw"></i>
+                            <h5 data-localize="trip_round">ذهاب وعودة</h5>
+                            <p data-localize="trip_round_sub">شامل الاتجاهين (توفير إضافي)</p>
+                            <span id="price-round-val">00 EGP</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content: space-between;">
+                        <button class="btn-outline" onclick="changeBookingStep(1)"><i data-lucide="arrow-right"></i>
+                            <span data-localize="back">السابق</span></button>
+                        <button class="btn-primary" onclick="changeBookingStep(3)"><span
+                                data-localize="next">المتابعة</span> <i data-lucide="arrow-left"></i></button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Interactive Toyota Hiace Seating Layout -->
+                <div class="flow-step" id="step-seat-select">
+                    <h4 style="text-align:center;" data-localize="select_seat_head">خريطة مقاعد العربيه التفاعلية
+                        (تويوتا هايس)</h4>
+                    <p style="text-align:center; color:var(--text-secondary); margin-bottom: 20px;"
+                        data-localize="select_seat_sub">انقر على مقعد فارغ لحجزه مؤقتاً وإتمام الحجز</p>
+
+                    <!-- Temporary lock banner countdown -->
+                    <div class="lock-timer-banner" id="lock-timer-banner" style="display:none;">
+                        <i data-lucide="hourglass"></i>
+                        <span><span data-localize="seat_locked_for">تم قفل المقعد مؤقتاً باسمك! الوقت المتبقي:</span>
+                            <strong id="lock-countdown">03:00</strong></span>
+                    </div>
+
+                    <!-- Toyota Hiace Layout Render -->
+                    <div class="bus-layout-outer">
+                        <div class="bus-cabin-header">
+                            <span><i data-lucide="circle-dot"></i> <span data-localize="front_cabin">مقدمة الحافلة
+                                    (السائق)</span></span>
+                        </div>
+                        <div class="bus-windshield"></div>
+                        <div class="bus-seats-container" id="seating-layout-grid">
+                            <!-- JS Dynamically renders seats here based on capacity/templates -->
+                        </div>
+                        <div
+                            style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; margin-top: 10px;">
+                            <span data-localize="back_cabin">مؤخرة العربيه</span>
+                        </div>
+                    </div>
+
+                    <!-- Seating Legend -->
+                    <div class="seating-legend">
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: var(--accent);"></div>
+                            <span data-localize="leg_avail">متاح</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: var(--danger);"></div>
+                            <span data-localize="leg_res">محجوز</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: var(--selected);"></div>
+                            <span data-localize="leg_sel">محدد</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: var(--locked);"></div>
+                            <span data-localize="leg_lock">مغلق مؤقتاً</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: var(--vip);"></div>
+                            <span data-localize="leg_vip">VIP مميز</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: var(--info);"></div>
+                            <span data-localize="leg_front">أمامي</span>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content: space-between; margin-top: 30px;">
+                        <button class="btn-outline" onclick="releaseCurrentLockAndBack()"><i
+                                data-lucide="arrow-right"></i> <span data-localize="back">السابق</span></button>
+                        <button class="btn-primary" id="confirm-booking-btn" disabled onclick="openConfirmationModal()">
+                            <i data-lucide="check"></i>
+                            <span data-localize="confirm_btn">تأكيد حجز المقعد</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking History Section -->
+            <div class="glass-card" id="history-box" style="display:none; padding:30px; margin-bottom: 40px;">
+                <h4 style="margin-bottom: 20px;" data-localize="history_head">سجل الحجوزات الخاصة بك</h4>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th data-localize="h_date">تاريخ الحجز</th>
+                                <th data-localize="h_bus">العربيه</th>
+                                <th data-localize="h_seat">رقم المقعد</th>
+                                <th data-localize="h_type">المسار</th>
+                                <th data-localize="h_price">السعر</th>
+                                <th data-localize="h_status">حالة الحجز</th>
+                                <th data-localize="h_actions">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-history-tbody">
+                            <!-- Dynamic rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ==========================================
+       5. DIGITAL TICKET VIEW PAGE
+       ========================================== -->
+    <div id="ticket-page" class="page">
+        <main>
+            <div class="ticket-page-container">
+                <div class="ticket-box" id="printable-ticket">
+                    <div class="ticket-header-strip">
+                        <h3 data-localize="ticket_header">تذكرة ركوب حافلة الامتحانات</h3>
+                        <p data-localize="ticket_subheader">الرجاء إظهار كود الـ QR للمشرف قبل الصعود للحافلة</p>
+                    </div>
+                    <div class="ticket-body">
+                        <div class="ticket-grid">
+                            <div class="ticket-item">
+                                <h6 data-localize="t_stud_name">اسم الطالب</h6>
+                                <p id="t-student-name">شحن...</p>
+                            </div>
+                            <div class="ticket-item">
+                                <h6 data-localize="t_res_code">رمز الحجز</h6>
+                                <p id="t-res-code">STUD-XXXX</p>
+                            </div>
+                            <div class="ticket-item">
+                                <h6 data-localize="t_bus_name">اسم العربيه</h6>
+                                <p id="t-bus-name">باص 1</p>
+                            </div>
+                            <div class="ticket-item">
+                                <h6 data-localize="t_seat_num">رقم المقعد</h6>
+                                <p id="t-seat-num">12</p>
+                            </div>
+                            <div class="ticket-item">
+                                <h6 data-localize="t_driver">السائق</h6>
+                                <p id="t-driver-name">كابتن ...</p>
+                            </div>
+                            <div class="ticket-item">
+                                <h6 data-localize="t_time">وقت التحرك</h6>
+                                <p id="t-departure-time">07:30 ص</p>
+                            </div>
+                            <div class="ticket-item">
+                                <h6 data-localize="t_loc">مكان التجمع</h6>
+                                <p id="t-meeting-location">موقف الجامعة</p>
+                            </div>
+                            <div class="ticket-item">
+                                <h6 data-localize="t_price">نوع الحجز والسعر</h6>
+                                <p><span id="t-type">ذهاب وعودة</span> - <span id="t-price">60 EGP</span></p>
+                            </div>
+                        </div>
+
+                        <div class="ticket-divider"></div>
+
+                        <div class="ticket-qr-container">
+                            <canvas id="ticket-qr-code" class="ticket-qr"></canvas>
+                            <p class="ticket-footer-msg" data-localize="t_verify_text">النظام مشفر. يتم مسح الكود من
+                                المشرف لتأكيد الحضور.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ticket-actions-row">
+                    <button class="btn-primary" onclick="downloadTicketPDF()">
+                        <i data-lucide="download"></i>
+                        <span data-localize="t_pdf">تحميل PDF</span>
+                    </button>
+                    <button class="btn-outline" onclick="printTicket()">
+                        <i data-lucide="printer"></i>
+                        <span data-localize="t_print">طباعة التذكرة</span>
+                    </button>
+                    <button class="btn-outline" onclick="navigateToPage('student-portal-page')">
+                        <i data-lucide="home"></i>
+                        <span data-localize="t_back_portal">العودة للبوابة</span>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Theme Customizer Panel -->
+    <button class="btn-circle theme-panel-toggle" onclick="toggleThemePanel()" title="Theme Accent Customizer">
+        <i data-lucide="palette"></i>
+    </button>
+    <div class="glass-card theme-panel" id="theme-panel">
+        <h5 style="margin-bottom: 10px;" data-localize="theme_palette">اختر اللون المميز:</h5>
+        <div class="color-picker-grid">
+            <div class="color-swatch active" style="background:#10b981;" onclick="setThemeAccent('#10b981', this)">
+            </div>
+            <div class="color-swatch" style="background:#3b82f6;" onclick="setThemeAccent('#3b82f6', this)"></div>
+            <div class="color-swatch" style="background:#ef4444;" onclick="setThemeAccent('#ef4444', this)"></div>
+            <div class="color-swatch" style="background:#f59e0b;" onclick="setThemeAccent('#f59e0b', this)"></div>
+            <div class="color-swatch" style="background:#8b5cf6;" onclick="setThemeAccent('#8b5cf6', this)"></div>
+            <div class="color-swatch" style="background:#ec4899;" onclick="setThemeAccent('#ec4899', this)"></div>
+            <div class="color-swatch" style="background:#06b6d4;" onclick="setThemeAccent('#06b6d4', this)"></div>
+            <div class="color-swatch" style="background:#f97316;" onclick="setThemeAccent('#f97316', this)"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+
+    <!-- ==========================================
+       8. MODALS & POPUPS
+       ========================================== -->
+
+    <!-- Booking Confirmation Modal -->
+    <div class="modal" id="confirmation-modal">
+        <div class="glass-card modal-content">
+            <h3 style="margin-bottom: 15px;" data-localize="modal_conf_title">تأكيد حجز التذكرة</h3>
+            <p data-localize="modal_conf_desc">يرجى مراجعة تفاصيل حجزك قبل التأكيد النهائي للمقعد:</p>
+
+            <div class="confirm-details-list">
+                <div class="confirm-row">
+                    <span class="confirm-label" data-localize="crm_name">الاسم بالكامل:</span>
+                    <span class="confirm-val" id="conf-student-name">شحن...</span>
+                </div>
+                <div class="confirm-row">
+                    <span class="confirm-label" data-localize="bc_name">العربيه:</span>
+                    <span class="confirm-val" id="conf-bus-name">باص 1</span>
+                </div>
+                <div class="confirm-row">
+                    <span class="confirm-label" data-localize="h_seat">رقم المقعد المحدد:</span>
+                    <span class="confirm-val" id="conf-seat-num">8</span>
+                </div>
+                <div class="confirm-row">
+                    <span class="confirm-label" data-localize="h_type">نوع الرحلة والمسار:</span>
+                    <span class="confirm-val" id="conf-trip-type">ذهاب وعودة</span>
+                </div>
+                <div class="confirm-row" style="border-bottom:none;">
+                    <span class="confirm-label" style="color:var(--accent); font-weight:700;"
+                        data-localize="total_price_label">التكلفة الإجمالية:</span>
+                    <span class="confirm-val" style="color:var(--accent); font-size:1.3rem;" id="conf-total-price">60
+                        EGP</span>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:15px; margin-top:20px;">
+                <button class="btn-primary" style="flex:1" onclick="finalizeBookingReservation()">
+                    <i data-lucide="check-circle2"></i>
+                    <span data-localize="modal_conf_confirm">تأكيد وحفظ التذكرة</span>
+                </button>
+                <button class="btn-outline" style="flex:1" onclick="closeConfirmationModal()">
+                    <span data-localize="modal_conf_cancel">إلغاء وتراجع</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student CRUD Modal -->
+    <div class="modal" id="student-modal">
+        <div class="glass-card modal-content">
+            <h3 style="margin-bottom: 20px;" id="student-modal-title">إضافة طالب جديد</h3>
+            <input type="hidden" id="student-modal-id">
+
+            <div class="form-group">
+                <label for="student-modal-name" data-localize="crm_name">الاسم بالكامل</label>
+                <input type="text" id="student-modal-name" required>
+            </div>
+            <div class="form-group">
+                <label for="student-modal-code" data-localize="crm_code">رمز الحجز</label>
+                <input type="text" id="student-modal-code" required placeholder="STUD-XXXX">
+            </div>
+            <div class="form-group">
+                <label for="student-modal-phone" data-localize="crm_phone">رقم الهاتف</label>
+                <input type="text" id="student-modal-phone" required>
+            </div>
+            <div class="form-group">
+                <label for="student-modal-notes" data-localize="crm_notes">ملاحظات</label>
+                <textarea id="student-modal-notes" rows="3"></textarea>
+            </div>
+
+            <div style="display:flex; gap:15px; margin-top:20px;">
+                <button class="btn-primary" style="flex:1" onclick="saveStudentCRM()">
+                    <i data-lucide="check"></i>
+                    <span data-localize="save">حفظ البيانات</span>
+                </button>
+                <button class="btn-outline" style="flex:1" onclick="closeStudentModal()">
+                    <span data-localize="modal_conf_cancel">إلغاء</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bus CRUD Modal -->
+    <div class="modal" id="bus-modal">
+        <div class="glass-card modal-content">
+            <h3 style="margin-bottom: 20px;" id="bus-modal-title">إضافة حافلة جديدة</h3>
+            <input type="hidden" id="bus-modal-id">
+
+            <div class="form-group">
+                <label for="bus-modal-name" data-localize="bc_name">اسم العربيه / النوع</label>
+                <input type="text" id="bus-modal-name" required placeholder="مثال: Microbus 4">
+            </div>
+            <div class="form-group">
+                <label for="bus-modal-driver" data-localize="bc_driver">اسم السائق</label>
+                <input type="text" id="bus-modal-driver" required>
+            </div>
+            <div class="form-group">
+                <label for="bus-modal-phone" data-localize="bc_phone">رقم السائق</label>
+                <input type="text" id="bus-modal-phone" required>
+            </div>
+            <div class="form-group">
+                <label for="bus-modal-time" data-localize="bc_time">وقت التحرك</label>
+                <input type="time" id="bus-modal-time" required>
+            </div>
+            <div class="form-group">
+                <label for="bus-modal-loc" data-localize="bc_loc">نقطة التجمع</label>
+                <input type="text" id="bus-modal-loc" required>
+            </div>
+            <div class="form-group">
+                <label for="bus-modal-capacity" data-localize="bc_capacity">الحمولة السعة (عدد الكراسي)</label>
+                <input type="number" id="bus-modal-capacity" min="1" max="100" value="14" required>
+            </div>
+            <div class="form-group">
+                <label for="bus-modal-template" data-localize="bc_template">قالب المقاعد التلقائي</label>
+                <select id="bus-modal-template">
+                    <option value="toyota_14">تويوتا هايس 14 مقعد</option>
+                    <option value="toyota_17">تويوتا هايس 17 مقعد</option>
+                    <option value="custom">قالب مخصص فارغ</option>
+                </select>
+            </div>
+
+            <div style="display:flex; gap:15px; margin-top:20px;">
+                <button class="btn-primary" style="flex:1" onclick="saveBusCRM()">
+                    <i data-lucide="check"></i>
+                    <span data-localize="save">حفظ العربيه</span>
+                </button>
+                <button class="btn-outline" style="flex:1" onclick="closeBusModal()">
+                    <span data-localize="modal_conf_cancel">إلغاء</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Success Code Modal -->
+    <div class="modal" id="registration-success-modal">
+        <div class="glass-card modal-content" style="max-width: 400px; text-align: center;">
+            <i data-lucide="check-circle"
+                style="font-size: 4rem; color: var(--accent); margin-bottom: 20px; display: inline-block;"></i>
+            <h3 style="margin-bottom: 15px;">تم إنشاء الحساب بنجاح!</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.95rem;">رمز الحجز الخاص بك (احفظه
+                لتسجيل الدخول لاحقاً):</p>
+
+            <div style="background: rgba(16, 185, 129, 0.1); border: 2px dashed var(--accent); padding: 15px; border-radius: 10px; font-size: 2rem; font-weight: bold; letter-spacing: 5px; color: var(--accent); margin-bottom: 25px;"
+                id="generated-student-code">
+                0000
+            </div>
+
+            <button class="btn-primary" style="width: 100%" onclick="closeRegistrationSuccessModal()">
+                <span>دخول لوحة الحجز</span>
+            </button>
+        </div>
+    </div>
+
+
+    <footer class="glass-card">
+        <p>© 2026 شركة السوبر للمواصلات - جميع الحقوق محفوظة.</p>
+        <div class="developer-credit">
+            Developed By
+            <a href="https://facebook.com/msh3x/" target="_blank">Mahmoud</a>
+        </div>
+        <!-- <span style="font-size:0.8rem; margin-top:5px; display:inline-block;">تم التطوير بأعلى معايير المؤسسات
+            الكبرى.</span> -->
+    </footer>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
