@@ -4,8 +4,8 @@
 // ==========================================
 
 // Enter your Supabase credentials here:
-const SUPABASE_URL = 'https://poqpieexdswhkrtjhirx.supabase.co'; 
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvcXBpZWV4ZHN3aGtydGpoaXJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjUxMzIsImV4cCI6MjA5Njg0MTEzMn0.zlMnwcVkthuxfBBEkfmJf9uh9NMmbneoathDs3IMJSs'; 
+const SUPABASE_URL = 'https://poqpieexdswhkrtjhirx.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvcXBpZWV4ZHN3aGtydGpoaXJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjUxMzIsImV4cCI6MjA5Njg0MTEzMn0.zlMnwcVkthuxfBBEkfmJf9uh9NMmbneoathDs3IMJSs';
 
 let supabaseClient = null;
 let isDemoMode = false;
@@ -57,6 +57,31 @@ let realtimeSubscribed = false;
 const STUDENT_SESSION_KEY = 'student_session';
 const ADMIN_SESSION_KEY = 'admin_session';
 const LAST_PAGE_KEY = 'ui_last_page';
+
+
+
+// ------------------------------- lock-----------------
+// ==========================================
+// SITE LOCK — يحجب الموقع لغير الأدمن
+// ==========================================
+(function checkSiteLock() {
+    const LOCK_ENABLED = true; // غيّرها لـ false لو عايز تفتح الموقع
+
+    if (!LOCK_ENABLED) return;
+
+    const adminSession = sessionStorage.getItem(ADMIN_SESSION_KEY) || localStorage.getItem(ADMIN_SESSION_KEY);
+    const isAdmin = !!adminSession;
+
+    if (!isAdmin) {
+        const overlay = document.getElementById('site-lock-overlay');
+        if (overlay) {
+            overlay.style.display = 'flex';
+            // إخفاء كل محتوى الصفحة خلف الـ overlay
+            document.body.style.overflow = 'hidden';
+        }
+    }
+})();
+
 
 // Designer canvas parameters
 let designerSeats = []; // { seat_label, seat_type, x_pos, y_pos, is_active }
@@ -378,9 +403,9 @@ document.addEventListener('DOMContentLoaded', () => {
     localizePage();
     startExamCountdown();
     loadBusesToLanding();
-    
+
     // Check routing hashes
-window.addEventListener('hashchange', handleHashRouting);
+    window.addEventListener('hashchange', handleHashRouting);
     const restoredStudent = restoreStudentSession();
     if (restoredStudent) {
         loggedInStudent = restoredStudent;
@@ -435,7 +460,7 @@ function toggleLanguage() {
     currentLanguage = (currentLanguage === 'ar') ? 'en' : 'ar';
     document.documentElement.lang = currentLanguage;
     document.documentElement.dir = (currentLanguage === 'ar') ? 'rtl' : 'ltr';
-    
+
     if (currentLanguage === 'en') {
         document.body.classList.add('lang-en');
         document.getElementById('lang-toggle').innerText = 'AR';
@@ -443,9 +468,9 @@ function toggleLanguage() {
         document.body.classList.remove('lang-en');
         document.getElementById('lang-toggle').innerText = 'EN';
     }
-    
+
     localizePage();
-    
+
     // Refresh components if rendering
     if (selectedBus) {
         renderSeatingMap(selectedBus.id);
@@ -464,7 +489,7 @@ function localizePage() {
             }
         }
     });
-    
+
     // Special adjustments
     document.title = (currentLanguage === 'ar') ? "السوبر للمواصلات" : "Super Transport";
     document.getElementById('nav-title').innerText = (currentLanguage === 'ar') ? "السوبر للمواصلات" : "Super Transport";
@@ -579,7 +604,7 @@ function renderTicketReservation(reservation) {
 
     const student = loggedInStudent;
     const bus = busesCache.find(b => b.id === reservation.bus_id) || selectedBus;
-    
+
     document.getElementById('t-student-name').innerText = student.full_name;
     document.getElementById('t-res-code').innerText = student.reservation_code;
     document.getElementById('t-bus-name').innerText = bus ? bus.name : '-';
@@ -587,15 +612,15 @@ function renderTicketReservation(reservation) {
     document.getElementById('t-driver-name').innerText = bus ? bus.driver_name : '-';
     document.getElementById('t-departure-time').innerText = bus ? bus.departure_time : '-';
     document.getElementById('t-meeting-location').innerText = bus ? bus.meeting_location : '-';
-    
+
     let tripLabel = (reservation.reservation_type === 'going') ? 'ذهاب فقط' : ((reservation.reservation_type === 'return') ? 'عودة فقط' : 'ذهاب وعودة');
     if (currentLanguage === 'en') {
         tripLabel = reservation.reservation_type.toUpperCase().replace('_', ' ');
     }
-    
+
     document.getElementById('t-type').innerText = tripLabel;
     document.getElementById('t-price').innerText = `${reservation.price} EGP`;
-    
+
     const qrCanvas = document.getElementById('ticket-qr-code');
     if (qrCanvas) {
         new QRious({
@@ -605,7 +630,7 @@ function renderTicketReservation(reservation) {
             foreground: '#0f172a'
         });
     }
-    
+
     localStorage.setItem('offline_ticket_cache', JSON.stringify({
         reservation,
         student,
@@ -623,11 +648,11 @@ async function hashPasswordSHA256(value) {
 
 function setThemeAccent(colorHex, el) {
     document.documentElement.style.setProperty('--accent', colorHex);
-    
+
     // Simple convert hex to rgb for opacity variables
-    let r = parseInt(colorHex.slice(1,3), 16);
-    let g = parseInt(colorHex.slice(3,5), 16);
-    let b = parseInt(colorHex.slice(5,7), 16);
+    let r = parseInt(colorHex.slice(1, 3), 16);
+    let g = parseInt(colorHex.slice(3, 5), 16);
+    let b = parseInt(colorHex.slice(5, 7), 16);
     document.documentElement.style.setProperty('--accent-rgb', `${r}, ${g}, ${b}`);
 
     document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
@@ -637,7 +662,7 @@ function setThemeAccent(colorHex, el) {
 function handleHashRouting() {
     const hash = window.location.hash;
     const isAdminPage = window.location.pathname.includes('admin.html');
-    
+
     if (hash === '#admin' || (isAdminPage && hash === '')) {
         if (loggedInAdmin) {
             navigateToPage('admin-dashboard-page');
@@ -662,7 +687,7 @@ function navigateToPage(pageId) {
     const target = document.getElementById(pageId);
     if (target) {
         target.classList.add('active');
-        window.scrollTo(0,0);
+        window.scrollTo(0, 0);
         localStorage.setItem(LAST_PAGE_KEY, pageId);
     } else {
         // Handle cross-page navigation
@@ -674,7 +699,7 @@ function navigateToPage(pageId) {
             return;
         }
     }
-    
+
     // Adjust header button state
     const headerBtn = document.getElementById('header-auth-btn');
     if (loggedInStudent) {
@@ -687,7 +712,7 @@ function navigateToPage(pageId) {
         headerBtn.innerHTML = `<i data-lucide="log-in"></i> <span>${translations[currentLanguage]['login']}</span>`;
         headerBtn.setAttribute('onclick', 'navigateToPage("auth-page")');
     }
-    
+
     // Load admin data if viewing admin panel
     if (pageId === 'admin-dashboard-page') {
         loadAdminOverviewMetrics();
@@ -744,20 +769,20 @@ function showToast(type, message) {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
     toast.className = `toast glass-card ${type}`;
-    
+
     let iconName = 'info';
     if (type === 'success') iconName = 'check-circle';
     if (type === 'error') iconName = 'alert-triangle';
     if (type === 'warning') iconName = 'alert-circle';
-    
+
     toast.innerHTML = `
         <i data-lucide="${iconName}"></i>
         <div>${message}</div>
     `;
-    
+
     container.appendChild(toast);
     lucide.createIcons();
-    
+
     setTimeout(() => {
         toast.style.animation = 'none';
         toast.style.opacity = '0';
@@ -771,26 +796,26 @@ function showToast(type, message) {
 function startExamCountdown() {
     // Check if countdown target exists in demo settings or default
     let targetDateStr = "2026-06-25T09:00:00";
-    
+
     // Retrieve from demo settings if available
     if (localStorage.getItem('exam_countdown')) {
         try {
             const saved = JSON.parse(localStorage.getItem('exam_countdown'));
             targetDateStr = saved.date;
-            
+
             const titleText = (currentLanguage === 'ar') ? saved.title_ar : saved.title_en;
             document.getElementById('countdown-title').innerText = titleText;
-        } catch(e){}
+        } catch (e) { }
     }
 
     const targetDate = new Date(targetDateStr).getTime();
-    
+
     if (countdownInterval) clearInterval(countdownInterval);
-    
+
     countdownInterval = setInterval(() => {
         const now = new Date().getTime();
         const diff = targetDate - now;
-        
+
         if (diff < 0) {
             clearInterval(countdownInterval);
             document.getElementById('cd-days').innerText = "00";
@@ -799,12 +824,12 @@ function startExamCountdown() {
             document.getElementById('cd-secs').innerText = "00";
             return;
         }
-        
+
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        
+
         const cdDaysEl = document.getElementById('cd-days');
         if (cdDaysEl) {
             cdDaysEl.innerText = String(days).padStart(2, '0');
@@ -842,14 +867,14 @@ async function saveCountdownSettings() {
                 { setting_key: 'exam_countdown', setting_value: countdownData },
                 { onConflict: 'setting_key' }
             );
-        
+
         if (error) throw error;
-        
+
         localStorage.setItem('exam_countdown', JSON.stringify(countdownData));
         showToast("تم تحديث إعدادات العد التنازلي بنجاح", "success");
-        
+
         startExamCountdown();
-    } catch(err) {
+    } catch (err) {
         showToast("حدث خطأ: " + (err.message || err), "error");
         console.error(err);
     }
@@ -874,7 +899,7 @@ function initializeDemoDatabase() {
     if (isDemoMode) {
         document.getElementById('demo-indicator').style.display = 'block';
         console.log("System running in Enterprise Demo Mode (Local Storage DB)");
-        
+
         // Initialize Local Storage mock tables
         if (!localStorage.getItem('pricing')) {
             localStorage.setItem('pricing', JSON.stringify(pricingCache));
@@ -914,19 +939,19 @@ function initializeDemoDatabase() {
             ['b-1', 'b-3'].forEach(busId => {
                 defaultSeats.push({ bus_id: busId, seat_label: 'Driver', seat_type: 'driver', x_pos: 0, y_pos: 0, is_active: true });
                 defaultSeats.push({ bus_id: busId, seat_label: '1', seat_type: 'front', x_pos: 2, y_pos: 0, is_active: true });
-                
+
                 defaultSeats.push({ bus_id: busId, seat_label: '2', seat_type: 'standard', x_pos: 0, y_pos: 1, is_active: true });
                 defaultSeats.push({ bus_id: busId, seat_label: '3', seat_type: 'standard', x_pos: 2, y_pos: 1, is_active: true });
-                
+
                 defaultSeats.push({ bus_id: busId, seat_label: '4', seat_type: 'standard', x_pos: 0, y_pos: 2, is_active: true });
                 defaultSeats.push({ bus_id: busId, seat_label: '5', seat_type: 'standard', x_pos: 2, y_pos: 2, is_active: true });
-                
+
                 defaultSeats.push({ bus_id: busId, seat_label: '6', seat_type: 'standard', x_pos: 0, y_pos: 3, is_active: true });
                 defaultSeats.push({ bus_id: busId, seat_label: '7', seat_type: 'standard', x_pos: 2, y_pos: 3, is_active: true });
-                
+
                 defaultSeats.push({ bus_id: busId, seat_label: '8', seat_type: 'standard', x_pos: 0, y_pos: 4, is_active: true });
                 defaultSeats.push({ bus_id: busId, seat_label: '9', seat_type: 'standard', x_pos: 2, y_pos: 4, is_active: true });
-                
+
                 defaultSeats.push({ bus_id: busId, seat_label: '10', seat_type: 'standard', x_pos: 0, y_pos: 5, is_active: true });
                 defaultSeats.push({ bus_id: busId, seat_label: '11', seat_type: 'standard', x_pos: 1, y_pos: 5, is_active: true });
                 defaultSeats.push({ bus_id: busId, seat_label: '12', seat_type: 'standard', x_pos: 2, y_pos: 5, is_active: true });
@@ -938,19 +963,19 @@ function initializeDemoDatabase() {
             defaultSeats.push({ bus_id: 'b-2', seat_label: 'Driver', seat_type: 'driver', x_pos: 0, y_pos: 0, is_active: true });
             defaultSeats.push({ bus_id: 'b-2', seat_label: '1', seat_type: 'front', x_pos: 2, y_pos: 0, is_active: true });
             defaultSeats.push({ bus_id: 'b-2', seat_label: '2', seat_type: 'front', x_pos: 3, y_pos: 0, is_active: true });
-            
+
             defaultSeats.push({ bus_id: 'b-2', seat_label: '3', seat_type: 'vip', x_pos: 0, y_pos: 1, is_active: true });
             defaultSeats.push({ bus_id: 'b-2', seat_label: '4', seat_type: 'vip', x_pos: 1, y_pos: 1, is_active: true });
             defaultSeats.push({ bus_id: 'b-2', seat_label: '5', seat_type: 'vip', x_pos: 3, y_pos: 1, is_active: true });
-            
+
             defaultSeats.push({ bus_id: 'b-2', seat_label: '6', seat_type: 'standard', x_pos: 0, y_pos: 2, is_active: true });
             defaultSeats.push({ bus_id: 'b-2', seat_label: '7', seat_type: 'standard', x_pos: 1, y_pos: 2, is_active: true });
             defaultSeats.push({ bus_id: 'b-2', seat_label: '8', seat_type: 'standard', x_pos: 3, y_pos: 2, is_active: true });
-            
+
             defaultSeats.push({ bus_id: 'b-2', seat_label: '9', seat_type: 'standard', x_pos: 0, y_pos: 3, is_active: true });
             defaultSeats.push({ bus_id: 'b-2', seat_label: '10', seat_type: 'standard', x_pos: 1, y_pos: 3, is_active: true });
             defaultSeats.push({ bus_id: 'b-2', seat_label: '11', seat_type: 'standard', x_pos: 3, y_pos: 3, is_active: true });
-            
+
             defaultSeats.push({ bus_id: 'b-2', seat_label: '12', seat_type: 'standard', x_pos: 0, y_pos: 4, is_active: true });
             defaultSeats.push({ bus_id: 'b-2', seat_label: '13', seat_type: 'standard', x_pos: 1, y_pos: 4, is_active: true });
             defaultSeats.push({ bus_id: 'b-2', seat_label: '14', seat_type: 'standard', x_pos: 2, y_pos: 4, is_active: true });
@@ -1021,7 +1046,7 @@ function writeSystemLog(action, details) {
             user_identifier: loggedInAdmin ? loggedInAdmin.username : (loggedInStudent ? loggedInStudent.reservation_code : 'guest'),
             action: action,
             details: details
-        }).then(() => {});
+        }).then(() => { });
     }
 
     // Update admin terminal logs if visible
@@ -1047,7 +1072,7 @@ async function fetchSupabaseData() {
                 pricingCache[p.price_key] = p.price_value;
             });
         }
-        
+
         // Load buses
         let { data: buses } = await supabaseClient.from('buses').select('*');
         if (buses) {
@@ -1076,7 +1101,7 @@ async function fetchSupabaseData() {
         // Load activity logs
         let { data: logs } = await supabaseClient.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(200);
         if (logs) activityLogsCache = logs.map(normalizeActivityLogRow);
-        
+
         // Load settings
         let { data: settings } = await supabaseClient.from('settings').select('*');
         if (settings) {
@@ -1086,7 +1111,7 @@ async function fetchSupabaseData() {
                 startExamCountdown();
             }
         }
-        
+
         // Initialize Realtime subscriptions
         setupRealtimeSub();
         loadBusesToLanding();
@@ -1105,7 +1130,7 @@ async function fetchSupabaseData() {
                 renderTicketReservation(cachedTicket.reservation);
             }
         }
-    } catch(e) {
+    } catch (e) {
         console.error("Failed to load Supabase initial data:", e);
         showToast("error", "فشل الاتصال بقاعدة البيانات. يرجى التحقق من اتصال الإنترنت.");
     }
@@ -1114,7 +1139,7 @@ async function fetchSupabaseData() {
 function setupRealtimeSub() {
     if (!supabaseClient || realtimeSubscribed) return;
     realtimeSubscribed = true;
-    
+
     // Subscribe to reservations table changes
     supabaseClient.channel('public:reservations')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, payload => {
@@ -1128,7 +1153,7 @@ function setupRealtimeSub() {
                 const idx = reservationsCache.findIndex(r => r.id === payload.new.id);
                 if (idx !== -1) reservationsCache[idx] = normalizeReservationRow(payload.new, seatLookup);
             }
-            
+
             // Refresh UI
             if (selectedBus) {
                 renderSeatingMap(selectedBus.id);
@@ -1169,15 +1194,15 @@ function setupRealtimeSub() {
 function loadBusesToLanding() {
     const grid = document.getElementById('landing-bus-grid');
     if (!grid) return;
-    
+
     grid.innerHTML = '';
-    
+
     busesCache.forEach(bus => {
         // Count booked seats
         const bookedCount = reservationsCache.filter(r => r.bus_id === bus.id && r.status === 'confirmed').length;
         const availableCount = bus.capacity - bookedCount;
         const fillPct = (bookedCount / bus.capacity) * 100;
-        
+
         const card = document.createElement('div');
         card.className = 'glass-card bus-card';
         card.innerHTML = `
@@ -1214,18 +1239,18 @@ function loadBusesToLanding() {
         `;
         grid.appendChild(card);
     });
-    
+
     lucide.createIcons();
-    
+
     // Calculate real synchronized statistics
     const totalStudents = studentsCache.length;
     const totalBuses = busesCache.length;
     const totalReservations = reservationsCache.filter(r => r.status === 'confirmed').length;
-    
+
     let totalCapacity = 0;
     busesCache.forEach(b => totalCapacity += b.capacity);
     const occupancyPct = totalCapacity > 0 ? Math.round((totalReservations / totalCapacity) * 100) : 0;
-    
+
     // Render real metrics
     document.getElementById('stat-students').innerText = totalStudents;
     document.getElementById('stat-buses').innerText = totalBuses;
@@ -1283,7 +1308,7 @@ async function loginStudent() {
             loggedInStudent = students[0];
             persistStudentSession(loggedInStudent);
             showToast("success", `أهلاً بك مجدداً يا ${loggedInStudent.full_name}`);
-            
+
             document.getElementById('student-login-phone').value = '';
             document.getElementById('student-login-pass').value = '';
 
@@ -1344,7 +1369,7 @@ async function registerStudent() {
         document.getElementById('student-register-name').value = '';
         document.getElementById('student-register-phone').value = '';
         document.getElementById('student-register-pass').value = '';
-    } catch(err) {
+    } catch (err) {
         console.error("Register student failed:", err);
         showToast("error", "تعذر إنشاء الحساب على الخادم.");
     }
@@ -1356,10 +1381,10 @@ function closeRegistrationSuccessModal() {
         loggedInStudent = window.pendingLoggedInStudent;
         persistStudentSession(loggedInStudent);
         showToast("success", `مرحباً بك يا ${loggedInStudent.full_name}`);
-        
+
         navigateToPage('student-portal-page');
         loadStudentPortalData();
-        
+
         window.pendingLoggedInStudent = null;
     }
 }
@@ -1383,15 +1408,15 @@ function logoutStudent() {
 
 function loadStudentPortalData() {
     if (!loggedInStudent) return;
-    
+
     document.getElementById('portal-student-name').innerText = loggedInStudent.full_name;
     document.getElementById('portal-student-code').innerText = loggedInStudent.reservation_code;
-    
+
     // Check if the student has any active confirmed reservation
     const activeRes = reservationsCache.find(r => r.student_id === loggedInStudent.id && r.status === 'confirmed');
     const bookingFlowCard = document.querySelector('.booking-flow-card');
     const activeBookingCard = document.getElementById('active-booking-card');
-    
+
     if (activeRes) {
         if (bookingFlowCard) bookingFlowCard.style.display = 'none';
         if (activeBookingCard) {
@@ -1406,16 +1431,16 @@ function loadStudentPortalData() {
     } else {
         if (bookingFlowCard) bookingFlowCard.style.display = 'block';
         if (activeBookingCard) activeBookingCard.style.display = 'none';
-        
+
         // Initialize Step 1: Render Buses in Student Portal
         loadBusesToPortal();
-        
+
         // Load pricing configs to selection cards
         document.getElementById('price-going-val').innerText = `${pricingCache.going_price} EGP`;
         document.getElementById('price-return-val').innerText = `${pricingCache.return_price} EGP`;
         document.getElementById('price-round-val').innerText = `${pricingCache.round_trip_price} EGP`;
     }
-    
+
     // Check student reservation history
     loadStudentBookingHistory();
 }
@@ -1442,13 +1467,13 @@ function studentHasConfirmedReservationOnBus(busId) {
 function loadBusesToPortal() {
     const grid = document.getElementById('portal-bus-grid');
     if (!grid) return;
-    
+
     grid.innerHTML = '';
-    
+
     busesCache.forEach(bus => {
         const bookedCount = reservationsCache.filter(r => r.bus_id === bus.id && r.status === 'confirmed').length;
         const fillPct = (bookedCount / bus.capacity) * 100;
-        
+
         const card = document.createElement('div');
         const alreadyBookedHere = studentHasConfirmedReservationOnBus(bus.id);
         card.className = `glass-card bus-card ${selectedBus && selectedBus.id === bus.id ? 'selected' : ''} ${alreadyBookedHere ? 'disabled' : ''}`;
@@ -1518,7 +1543,7 @@ function changeBookingStep(stepNum) {
     document.querySelectorAll('.flow-step').forEach(step => {
         step.classList.remove('active');
     });
-    
+
     if (stepNum === 1) {
         document.getElementById('step-bus-select').classList.add('active');
     } else if (stepNum === 2) {
@@ -1553,7 +1578,7 @@ async function releaseSpecificSeatLock(busId, seat) {
                 p_bus_id: busId,
                 p_seat_id: seat.id
             });
-        } catch (e) {}
+        } catch (e) { }
     }
 }
 
@@ -1564,14 +1589,14 @@ async function releaseSpecificSeatLock(busId, seat) {
 async function renderSeatingMap(busId) {
     const grid = document.getElementById('seating-layout-grid');
     grid.innerHTML = '';
-    
+
     // Retrieve seats configured for this bus
     let seats = [];
-    
+
     if (isDemoMode) {
         const allSeats = JSON.parse(localStorage.getItem('seats')) || [];
         seats = allSeats.filter(s => s.bus_id === busId);
-        
+
         // If no seats configured for this bus, create defaults automatically
         if (seats.length === 0) {
             seats = generateDefaultSeatsForBus(busId, selectedBus.capacity);
@@ -1581,7 +1606,7 @@ async function renderSeatingMap(busId) {
         try {
             let { data } = await supabaseClient.from('seats').select('*').eq('bus_id', busId);
             if (data) seats = data;
-        } catch(e) {
+        } catch (e) {
             console.error("Error loading seats from DB:", e);
         }
     }
@@ -1594,7 +1619,7 @@ async function renderSeatingMap(busId) {
     });
 
     grid.style.gridTemplateColumns = `repeat(${maxX + 1}, 1fr)`;
-    
+
     // Build a lookup grid map
     const seatMap = {};
     seats.forEach(s => {
@@ -1604,7 +1629,7 @@ async function renderSeatingMap(busId) {
     // Get current active locks and reservations on this bus
     let reservations = reservationsCache.filter(r => r.bus_id === busId && r.status === 'confirmed');
     let locks = seatLocksCache.filter(l => l.bus_id === busId && new Date(l.locked_until) > new Date());
-    
+
     if (isDemoMode) {
         const allLocks = JSON.parse(localStorage.getItem('seat_locks')) || [];
         locks = allLocks.filter(l => l.bus_id === busId && new Date(l.locked_until) > new Date());
@@ -1615,7 +1640,7 @@ async function renderSeatingMap(busId) {
         for (let x = 0; x <= maxX; x++) {
             const coord = `${x},${y}`;
             const seat = seatMap[coord];
-            
+
             if (!seat) {
                 // Render empty space / aisle
                 const empty = document.createElement('div');
@@ -1626,14 +1651,14 @@ async function renderSeatingMap(busId) {
 
             const seatEl = document.createElement('div');
             seatEl.className = 'seat-item';
-            
+
             // Set custom styling attributes based on type
             seatEl.classList.add(`${seat.seat_type}-seat`);
-            
+
             // Determine Status
             const isReserved = reservations.some(r => r.seat_label === seat.seat_label || (r.seat_id === seat.id));
             const currentLock = locks.find(l => l.seat_label === seat.seat_label || (l.seat_id === seat.id));
-            
+
             if (seat.seat_type === 'driver') {
                 seatEl.classList.add('driver-seat');
                 seatEl.innerHTML = `<i data-lucide="circle-dot"></i><span style="font-size:0.65rem;">${(currentLanguage === 'ar') ? 'سائق' : 'Driver'}</span>`;
@@ -1663,15 +1688,15 @@ async function renderSeatingMap(busId) {
                 // Available
                 seatEl.classList.add('available');
                 seatEl.innerHTML = `<i data-lucide="armchair"></i><span>${seat.seat_label}</span>`;
-                
+
                 // Selectable click handler
                 seatEl.onclick = () => selectSeatAndLock(seat);
             }
-            
+
             grid.appendChild(seatEl);
         }
     }
-    
+
     lucide.createIcons();
 }
 
@@ -1716,7 +1741,7 @@ function generateDefaultSeatsForBus(busId, capacity) {
             }
         }
     }
-    
+
     if (isDemoMode) {
         const all = JSON.parse(localStorage.getItem('seats')) || [];
         const filtered = all.filter(s => s.bus_id !== busId);
@@ -1771,18 +1796,18 @@ async function selectSeatAndLock(seat) {
 async function writeSeatLockOnDatabase(busId, seat) {
     const expiry = new Date(new Date().getTime() + 3 * 60 * 1000).toISOString();
     const seatLabel = seat.seat_label;
-    
+
     if (isDemoMode) {
         let locks = JSON.parse(localStorage.getItem('seat_locks')) || [];
-        
+
         // Clear expired locks first
         locks = locks.filter(l => new Date(l.locked_until) > new Date());
-        
+
         // Check if seat is already locked by someone else
         const conflict = locks.some(l => l.bus_id === busId && l.seat_label === seatLabel && l.student_id !== loggedInStudent.id);
-        
+
         if (conflict) return false;
-        
+
         // Upsert lock
         const existingIdx = locks.findIndex(l => l.bus_id === busId && l.seat_label === seatLabel);
         if (existingIdx !== -1) {
@@ -1797,7 +1822,7 @@ async function writeSeatLockOnDatabase(busId, seat) {
                 locked_until: expiry
             });
         }
-        
+
         localStorage.setItem('seat_locks', JSON.stringify(locks));
         seatLocksCache = locks;
         return true;
@@ -1809,10 +1834,10 @@ async function writeSeatLockOnDatabase(busId, seat) {
                 p_bus_id: busId,
                 p_seat_id: seat.id // wait, RPC parameter requires seat UUID, let's make sure we find the seat UUID
             });
-            
+
             if (error) throw error;
             return data;
-        } catch(e) {
+        } catch (e) {
             console.error("DB locking exception:", e);
             return false;
         }
@@ -1833,9 +1858,9 @@ async function releaseSeatLockOnDatabase(busId, seatLabel) {
                 p_bus_id: busId,
                 p_seat_id: selectedSeat.id
             });
-        } catch(e) {}
+        } catch (e) { }
     }
-    
+
     selectedSeat = null;
     selectedSeatLocked = false;
     document.getElementById('confirm-booking-btn').disabled = true;
@@ -1847,18 +1872,18 @@ function startLockCountdown(seconds) {
     activeLockTimeRemaining = seconds;
     const banner = document.getElementById('lock-timer-banner');
     const countdownEl = document.getElementById('lock-countdown');
-    
+
     banner.style.display = 'flex';
-    
+
     if (activeLockTimer) clearInterval(activeLockTimer);
-    
+
     activeLockTimer = setInterval(() => {
         activeLockTimeRemaining--;
-        
+
         const mins = Math.floor(activeLockTimeRemaining / 60);
         const secs = activeLockTimeRemaining % 60;
         countdownEl.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-        
+
         if (activeLockTimeRemaining <= 0) {
             clearInterval(activeLockTimer);
             banner.style.display = 'none';
@@ -1875,39 +1900,39 @@ function startLockCountdown(seconds) {
 
 function calculateTotalPrice() {
     if (!selectedSeat) return 0;
-    
+
     let basePrice = 0;
     if (selectedTripType === 'going') basePrice = Number(pricingCache.going_price);
     if (selectedTripType === 'return') basePrice = Number(pricingCache.return_price);
     if (selectedTripType === 'round_trip') basePrice = Number(pricingCache.round_trip_price);
-    
+
     // Seat surcharges
     let surcharge = 0;
     if (selectedSeat.seat_type === 'vip') surcharge = Number(pricingCache.vip_seat_fee);
     if (selectedSeat.seat_type === 'front') surcharge = Number(pricingCache.front_seat_fee);
-    
+
     let total = basePrice + surcharge - Number(pricingCache.discount_amount);
     return Math.max(0, total);
 }
 
 function openConfirmationModal() {
     if (!selectedSeat || !selectedBus) return;
-    
+
     document.getElementById('conf-student-name').innerText = loggedInStudent.full_name;
     document.getElementById('conf-bus-name').innerText = selectedBus.name;
     document.getElementById('conf-seat-num').innerText = selectedSeat.seat_label;
-    
+
     let typeLabel = 'ذهاب فقط';
     if (selectedTripType === 'return') typeLabel = 'عودة فقط';
     if (selectedTripType === 'round_trip') typeLabel = 'ذهاب وعودة';
-    
+
     if (currentLanguage === 'en') {
         typeLabel = selectedTripType.toUpperCase().replace('_', ' ');
     }
-    
+
     document.getElementById('conf-trip-type').innerText = typeLabel;
     document.getElementById('conf-total-price').innerText = `${calculateTotalPrice()} EGP`;
-    
+
     document.getElementById('confirmation-modal').classList.add('active');
 }
 
@@ -1918,7 +1943,7 @@ function closeConfirmationModal() {
 async function finalizeBookingReservation() {
     closeConfirmationModal();
     showToast("info", (currentLanguage === 'ar') ? "جاري تسجيل حجزك وإصدار التذكرة..." : "Finalizing reservation...");
-    
+
     const ticketPrice = calculateTotalPrice();
     const resId = 'res-' + Math.random().toString(36).substr(2, 9);
 
@@ -1929,11 +1954,11 @@ async function finalizeBookingReservation() {
         renderSeatingMap(selectedBus.id);
         return;
     }
-    
+
     if (isDemoMode) {
         // Insert into Local Storage Mock
         let reservations = JSON.parse(localStorage.getItem('reservations')) || [];
-        
+
         const studentAlreadyBooked = reservations.some(r =>
             r.student_id === loggedInStudent.id &&
             r.status === 'confirmed'
@@ -1947,7 +1972,7 @@ async function finalizeBookingReservation() {
 
         // Verify seat is not double-booked in DB
         const collision = reservations.some(r => r.bus_id === selectedBus.id && r.seat_label === selectedSeat.seat_label && r.status === 'confirmed');
-        
+
         if (collision) {
             showToast("error", (currentLanguage === 'ar') ? "خطأ! تم حجز هذا المقعد من طالب آخر أثناء تأكيدك للحجز." : "Double-booking collision! Seat reserved by another student.");
             releaseSeatLockOnDatabase(selectedBus.id, selectedSeat.seat_label);
@@ -1965,26 +1990,26 @@ async function finalizeBookingReservation() {
             booking_date: new Date().toISOString(),
             status: 'confirmed'
         };
-        
+
         reservations.push(newRes);
         localStorage.setItem('reservations', JSON.stringify(reservations));
         reservationsCache = reservations;
-        
+
         // Clear local seat lock
         let locks = JSON.parse(localStorage.getItem('seat_locks')) || [];
         locks = locks.filter(l => !(l.bus_id === selectedBus.id && l.seat_label === selectedSeat.seat_label));
         localStorage.setItem('seat_locks', JSON.stringify(locks));
         seatLocksCache = locks;
-        
+
         writeSystemLog("ticket_booked", `حجز مقعد ناجح: الطالب ${loggedInStudent.full_name} حجز المقعد ${selectedSeat.seat_label} في الباص ${selectedBus.name}`);
-        
+
         showToast("success", (currentLanguage === 'ar') ? "تم تأكيد الحجز بنجاح! جاري عرض التذكرة الرقمية." : "Reservation successful! Rendering your digital ticket.");
-        
+
         // Cancel timers
         if (activeLockTimer) clearInterval(activeLockTimer);
         document.getElementById('lock-timer-banner').style.display = 'none';
         selectedSeatLocked = false;
-        
+
         // Load Digital ticket view
         viewDigitalTicket(newRes);
     } else {
@@ -1997,14 +2022,14 @@ async function finalizeBookingReservation() {
                 p_reservation_type: selectedTripType,
                 p_price: ticketPrice
             });
-            
+
             if (error) throw error;
-            
+
             // Fetch updated tables
             fetchSupabaseData();
-            
+
             showToast("success", "تم الحجز بنجاح على قاعدة البيانات.");
-            
+
             // Route to ticket
             const mockResObj = {
                 id: data, // returns the created reservation UUID
@@ -2017,7 +2042,7 @@ async function finalizeBookingReservation() {
             };
             selectedSeatLocked = false;
             viewDigitalTicket(mockResObj);
-        } catch(err) {
+        } catch (err) {
             console.error("Booking error details:", err);
             showToast("error", "حدث خطأ أثناء الاتصال بالخادم. يرجى إعادة المحاولة.");
         }
@@ -2040,13 +2065,13 @@ function printTicket() {
 function downloadTicketPDF() {
     const ticket = document.getElementById('printable-ticket');
     const opt = {
-        margin:       10,
-        filename:     `ExamBus-Ticket-${document.getElementById('t-res-code').innerText}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        margin: 10,
+        filename: `ExamBus-Ticket-${document.getElementById('t-res-code').innerText}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
-    
+
     html2pdf().set(opt).from(ticket).save().then(() => {
         showToast("success", "تم تحميل التذكرة بصيغة PDF بنجاح!");
     });
@@ -2055,9 +2080,9 @@ function downloadTicketPDF() {
 function loadStudentBookingHistory() {
     const tbody = document.getElementById('student-history-tbody');
     tbody.innerHTML = '';
-    
+
     const studentRes = reservationsCache.filter(r => r.student_id === loggedInStudent.id);
-    
+
     if (studentRes.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-secondary);">لا توجد حجوزات سابقة مسجلة.</td></tr>`;
         document.getElementById('history-box').style.display = 'block';
@@ -2068,7 +2093,7 @@ function loadStudentBookingHistory() {
         const bus = busesCache.find(b => b.id === r.bus_id);
         const busName = bus ? bus.name : 'عربيه محذوفة';
         const dateStr = new Date(r.booking_date).toLocaleDateString();
-        
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${dateStr}</td>
@@ -2083,7 +2108,7 @@ function loadStudentBookingHistory() {
         `;
         tbody.appendChild(tr);
     });
-    
+
     document.getElementById('history-box').style.display = 'block';
     lucide.createIcons();
 }
@@ -2103,7 +2128,7 @@ function viewHistoryTicket(resId) {
 async function authenticateAdmin() {
     const user = document.getElementById('admin-user-input').value.trim();
     const pass = document.getElementById('admin-pass-input').value.trim();
-    
+
     if (!user || !pass) {
         showToast("warning", "الرجاء إدخال اسم المستخدم وكلمة المرور!");
         return;
@@ -2123,7 +2148,7 @@ async function authenticateAdmin() {
             await fetchSupabaseData();
         }
     };
-    
+
     if (isDemoMode) {
         if (user === 'admin' && pass === 'admin123') {
             await grantAdminAccess("أهلاً بك كمسؤول نظام امتحانات جو.", simulatedHash);
@@ -2162,10 +2187,10 @@ function logoutAdmin() {
 function switchAdminSection(sectionId, el) {
     document.querySelectorAll('.admin-nav-item').forEach(item => item.classList.remove('active'));
     document.querySelectorAll('.admin-section').forEach(sec => sec.classList.remove('active'));
-    
+
     el.classList.add('active');
     document.getElementById(sectionId).classList.add('active');
-    
+
     // Scanner control
     if (sectionId === 'admin-scanner') {
         startCameraQRScanner();
@@ -2181,19 +2206,19 @@ function switchAdminSection(sectionId, el) {
 // --- SECTION A: METRICS & GRAPHS ---
 function loadAdminOverviewMetrics() {
     const activeRes = reservationsCache.filter(r => r.status === 'confirmed');
-    
+
     // Calculations
     const totalStudentsCount = studentsCache.length;
     const activeReservationsCount = activeRes.length;
-    
+
     let totalCapacity = 0;
     busesCache.forEach(b => totalCapacity += b.capacity);
-    
+
     const occupancyPct = totalCapacity > 0 ? Math.round((activeReservationsCount / totalCapacity) * 100) : 0;
-    
+
     let revenue = 0;
     activeRes.forEach(r => revenue += Number(r.price));
-    
+
     // Set text counters
     document.getElementById('m-total-students').innerText = totalStudentsCount;
     document.getElementById('m-total-res').innerText = activeReservationsCount;
@@ -2202,7 +2227,7 @@ function loadAdminOverviewMetrics() {
 
     // Draw Charts
     renderAdminCharts();
-    
+
     // Stream activity logs
     const logsContainer = document.getElementById('live-logs-terminal');
     logsContainer.innerHTML = '';
@@ -2223,7 +2248,7 @@ function renderAdminCharts() {
 function loadAdminStudentsCRM() {
     const tbody = document.getElementById('admin-students-tbody');
     tbody.innerHTML = '';
-    
+
     document.getElementById('crm-student-count').innerText = studentsCache.length;
 
     studentsCache.forEach(student => {
@@ -2373,7 +2398,7 @@ async function cancelReservationAdmin(reservationId) {
 function filterStudentsTable() {
     const query = document.getElementById('student-search-input').value.toLowerCase();
     const rows = document.querySelectorAll('#admin-students-tbody tr');
-    
+
     rows.forEach(row => {
         const name = row.children[0].innerText.toLowerCase();
         const code = row.children[1].innerText.toLowerCase();
@@ -2388,7 +2413,7 @@ function filterStudentsTable() {
 function openStudentModal(studentId = '') {
     const modal = document.getElementById('student-modal');
     const title = document.getElementById('student-modal-title');
-    
+
     if (studentId) {
         title.innerText = 'تعديل بيانات طالب';
         const s = studentsCache.find(x => x.id === studentId);
@@ -2410,7 +2435,7 @@ function openStudentModal(studentId = '') {
         document.getElementById('student-modal-phone').value = '';
         document.getElementById('student-modal-notes').value = '';
     }
-    
+
     modal.classList.add('active');
 }
 
@@ -2452,7 +2477,7 @@ async function saveStudentCRM() {
         showToast("success", "تم حفظ بيانات الطالب بنجاح.");
         closeStudentModal();
         loadAdminStudentsCRM();
-        
+
         writeSystemLog("student_crm_save", `تم حفظ الطالب: ${name} (${code})`);
     } else {
         supabaseClient.rpc('admin_save_student', {
@@ -2477,14 +2502,14 @@ async function saveStudentCRM() {
 }
 
 async function deleteStudentCRM(studentId) {
-    if(!confirm("هل أنت متأكد من حذف هذا الطالب نهائياً من قاعدة البيانات؟")) return;
-    
+    if (!confirm("هل أنت متأكد من حذف هذا الطالب نهائياً من قاعدة البيانات؟")) return;
+
     if (isDemoMode) {
         studentsCache = studentsCache.filter(s => s.id !== studentId);
         localStorage.setItem('students', JSON.stringify(studentsCache));
         showToast("success", "تم حذف سجل الطالب بنجاح.");
         loadAdminStudentsCRM();
-        
+
         writeSystemLog("student_crm_delete", `تم حذف معرف الطالب: ${studentId}`);
     } else {
         supabaseClient.rpc('admin_delete_student', {
@@ -2513,13 +2538,13 @@ function handleCSVImport(event) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         const text = e.target.result;
         const rows = text.split('\n');
         let importCount = 0;
-        
+
         // Skip header row: Name,Code,Phone,Notes
-        for(let i = 1; i < rows.length; i++) {
+        for (let i = 1; i < rows.length; i++) {
             const cols = rows[i].split(',');
             if (cols.length >= 3) {
                 const name = cols[0].trim();
@@ -2596,7 +2621,7 @@ function exportStudentsToCSV() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     showToast("success", "تم تصدير ملف الطلاب كـ CSV.");
 }
 
@@ -2635,12 +2660,12 @@ function closeAdminBusSeatsModal() {
 async function viewAdminBusSeats(busId) {
     const bus = busesCache.find(b => b.id === busId);
     if (!bus) return;
-    
+
     document.getElementById('admin-bus-seats-title').innerText = `مقاعد العربيه: ${bus.name}`;
-    
+
     const grid = document.getElementById('admin-seating-layout-grid');
     grid.innerHTML = '';
-    
+
     // Retrieve seats configured for this bus
     let seats = [];
     if (isDemoMode) {
@@ -2651,9 +2676,9 @@ async function viewAdminBusSeats(busId) {
         try {
             let { data } = await supabaseClient.from('seats').select('*').eq('bus_id', busId);
             if (data) seats = data;
-        } catch(e) { console.error(e); }
+        } catch (e) { console.error(e); }
     }
-    
+
     if (seats.length === 0) {
         grid.innerHTML = '<p style="grid-column: 1 / -1; text-align:center;">لا توجد مقاعد مهيئة لهذه العربيه.</p>';
     } else {
@@ -2664,7 +2689,7 @@ async function viewAdminBusSeats(busId) {
         });
 
         grid.style.gridTemplateColumns = `repeat(${maxX + 1}, 1fr)`;
-        
+
         let gridMap = {};
         seats.forEach(seat => {
             gridMap[`${seat.x_pos},${seat.y_pos}`] = seat;
@@ -2677,7 +2702,7 @@ async function viewAdminBusSeats(busId) {
             for (let x = 0; x <= maxX; x++) {
                 const coord = `${x},${y}`;
                 const seat = gridMap[coord];
-                
+
                 if (!seat) {
                     const empty = document.createElement('div');
                     empty.className = 'seat-placeholder';
@@ -2687,9 +2712,9 @@ async function viewAdminBusSeats(busId) {
 
                 const seatNode = document.createElement('div');
                 seatNode.className = `seat-item ${seat.seat_type}-seat`;
-                
+
                 const res = confirmedReservations.find(r => r.seat_label === seat.seat_label);
-                
+
                 if (res) {
                     seatNode.classList.add('reserved');
                     const student = studentsCache.find(s => s.id === res.student_id);
@@ -2713,14 +2738,14 @@ async function viewAdminBusSeats(busId) {
         }
         lucide.createIcons();
     }
-    
+
     document.getElementById('admin-bus-seats-modal').classList.add('active');
 }
 
 function openBusModal(busId = '') {
     const modal = document.getElementById('bus-modal');
     const title = document.getElementById('bus-modal-title');
-    
+
     if (busId) {
         title.innerText = 'تعديل بيانات عربيه';
         const b = busesCache.find(x => x.id === busId);
@@ -2743,7 +2768,7 @@ function openBusModal(busId = '') {
         document.getElementById('bus-modal-capacity').value = 14;
         document.getElementById('bus-modal-template').value = 'toyota_14';
     }
-    
+
     modal.classList.add('active');
 }
 
@@ -2784,16 +2809,16 @@ async function saveBusCRM() {
             });
         }
         localStorage.setItem('buses', JSON.stringify(busesCache));
-        
+
         // Initialize default seats templates for the newly created bus
         generateDefaultSeatsForBus(generatedId, cap);
-        
+
         showToast("success", "تم حفظ بيانات العربيه والمقاعد بنجاح.");
         closeBusModal();
         loadAdminBusesCRM();
         loadBusesToLanding();
         loadDesignerBusesSelect();
-        
+
         writeSystemLog("bus_crm_save", `تم حفظ عربيه: ${name}`);
     } else {
         supabaseClient.rpc('admin_save_bus', {
@@ -2834,22 +2859,22 @@ async function saveBusCRM() {
 }
 
 async function deleteBusCRM(busId) {
-    if(!confirm("حذف العربيه سيؤدي لحذف كافة المقاعد والحجوزات المرتبطة بها! هل أنت متأكد؟")) return;
-    
+    if (!confirm("حذف العربيه سيؤدي لحذف كافة المقاعد والحجوزات المرتبطة بها! هل أنت متأكد؟")) return;
+
     if (isDemoMode) {
         busesCache = busesCache.filter(b => b.id !== busId);
         localStorage.setItem('buses', JSON.stringify(busesCache));
-        
+
         // Remove matching seats and reservations
         let seats = JSON.parse(localStorage.getItem('seats')) || [];
         seats = seats.filter(s => s.bus_id !== busId);
         localStorage.setItem('seats', JSON.stringify(seats));
-        
+
         showToast("success", "تم حذف العربيه ومرفقاتها بنجاح.");
         loadAdminBusesCRM();
         loadBusesToLanding();
         loadDesignerBusesSelect();
-        
+
         writeSystemLog("bus_crm_delete", `تم حذف معرف العربيه: ${busId}`);
     } else {
         supabaseClient.rpc('admin_delete_bus', {
@@ -2881,12 +2906,12 @@ function loadBusInDesigner() {
     const busId = document.getElementById('designer-bus-select').value;
     const canvas = document.getElementById('designer-grid-canvas');
     canvas.innerHTML = '';
-    
+
     if (!busId) return;
 
     const allSeats = isDemoMode ? (JSON.parse(localStorage.getItem('seats')) || []) : seatsCache;
     designerSeats = allSeats.filter(s => s.bus_id === busId);
-    
+
     // If empty, generate defaults
     if (designerSeats.length === 0) {
         const bus = busesCache.find(b => b.id === busId);
@@ -2899,7 +2924,7 @@ function loadBusInDesigner() {
 function renderDesignerCanvas() {
     const canvas = document.getElementById('designer-grid-canvas');
     canvas.innerHTML = '';
-    
+
     // Layout is a grid: column x (0-4) and row y (0-9)
     // Draw grid cells
     const gridMap = {};
@@ -2915,12 +2940,12 @@ function renderDesignerCanvas() {
         for (let x = 0; x < 5; x++) {
             const coord = `${x},${y}`;
             const node = gridMap[coord];
-            
+
             const cell = document.createElement('div');
             cell.className = 'designer-grid-cell';
             cell.setAttribute('data-x', x);
             cell.setAttribute('data-y', y);
-            
+
             // Allow dragging and drop actions
             cell.ondragover = e => e.preventDefault();
             cell.ondrop = e => handleDesignerDrop(e, x, y);
@@ -2934,7 +2959,7 @@ function renderDesignerCanvas() {
                     <span>${node.seat.seat_label}</span>
                     <button class="remove-btn" onclick="removeSeatFromDesigner(event, ${node.idx})">x</button>
                 `;
-                
+
                 // Drag events
                 seatNode.ondragstart = e => {
                     e.dataTransfer.setData('text/plain', node.idx);
@@ -2942,7 +2967,7 @@ function renderDesignerCanvas() {
 
                 cell.appendChild(seatNode);
             }
-            
+
             canvas.appendChild(cell);
         }
     }
@@ -2956,7 +2981,7 @@ function addSeatToDesigner() {
     }
 
     const type = document.getElementById('designer-type-select').value;
-    
+
     // Find first empty cell on grid
     let foundX = -1, foundY = -1;
     for (let y = 0; y < 7; y++) {
@@ -2994,7 +3019,7 @@ function addSeatToDesigner() {
 function handleDesignerDrop(e, targetX, targetY) {
     e.preventDefault();
     const seatIdx = parseInt(e.dataTransfer.getData('text/plain'));
-    
+
     // Verify collision at destination
     const collision = designerSeats.some((s, idx) => s.x_pos === targetX && s.y_pos === targetY && idx !== seatIdx);
     if (collision) {
@@ -3005,7 +3030,7 @@ function handleDesignerDrop(e, targetX, targetY) {
     // Move seat node
     designerSeats[seatIdx].x_pos = targetX;
     designerSeats[seatIdx].y_pos = targetY;
-    
+
     renderDesignerCanvas();
 }
 
@@ -3029,19 +3054,19 @@ async function saveDesignerLayout() {
     if (isDemoMode) {
         const allSeats = JSON.parse(localStorage.getItem('seats')) || [];
         const filtered = allSeats.filter(s => s.bus_id !== busId);
-        
+
         const updated = [...filtered, ...designerSeats];
         localStorage.setItem('seats', JSON.stringify(updated));
-        
+
         // Automatically adjust capacity count in bus table to match the count of seat nodes
         const activeCapacity = designerSeats.filter(s => s.seat_type !== 'driver').length;
         const bus = busesCache.find(b => b.id === busId);
         bus.capacity = activeCapacity;
         localStorage.setItem('buses', JSON.stringify(busesCache));
-        
+
         showToast("success", `تم حفظ التغييرات وتحديث مخطط المقاعد بنجاح. السعة الجديدة: ${activeCapacity} مقاعد.`);
         writeSystemLog("designer_save", `تم إعادة تصميم وتحديث سعة العربيه ${bus.name} إلى ${activeCapacity} مقعد`);
-        
+
         loadAdminBusesCRM();
         loadBusesToLanding();
     } else {
@@ -3142,12 +3167,12 @@ async function saveSystemPricing() {
 let html5QrcodeScanner = null;
 
 function startCameraQRScanner() {
-    html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { 
-        fps: 10, 
+    html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", {
+        fps: 10,
         qrbox: 250,
         rememberLastUsedCamera: true
     });
-    
+
     html5QrcodeScanner.render(onScanSuccess, onScanError);
 }
 
@@ -3162,19 +3187,19 @@ function stopCameraQRScanner() {
 async function onScanSuccess(decodedText, decodedResult) {
     console.log(`Scan result: ${decodedText}`);
     // decodedText represents the reservation ID
-    
+
     // Process checking attendance
     const res = reservationsCache.find(r => r.id === decodedText);
-    
+
     if (res) {
         // Beep or Notify
         showToast("success", `تم التعرف على التذكرة بنجاح!`);
-        
+
         // Add to attendance database
         if (isDemoMode) {
             let attendance = JSON.parse(localStorage.getItem('attendance')) || [];
             const duplicate = attendance.some(a => a.reservation_id === res.id);
-            
+
             if (!duplicate) {
                 attendance.push({
                     id: 'att-' + Math.random().toString(36).substr(2, 9),
@@ -3209,7 +3234,7 @@ async function onScanSuccess(decodedText, decodedResult) {
         document.getElementById('scan-checkin-time').innerText = new Date().toLocaleTimeString();
 
         document.getElementById('scanner-result-box').style.display = 'block';
-        
+
         writeSystemLog("check_in", `تسجيل حضور الطالب: ${student ? student.full_name : ''} - المقعد: ${res.seat_label}`);
     } else {
         showToast("error", "تذكرة غير صالحة أو غير مسجلة في خوادم النظام!");
