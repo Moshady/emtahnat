@@ -36,6 +36,34 @@
 </head>
 
 <body>
+<!-- ----------------lock--------------- -->
+        <!-- ========== SITE LOCK OVERLAY ========== -->
+    <div id="site-lock-overlay" style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        background: #0a0f1d;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-family: 'Cairo', sans-serif;
+        color: #e2e8f0;
+    ">
+        <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 50px 40px; max-width: 480px; width: 90%;">
+            <div style="font-size: 4rem; margin-bottom: 20px;">🔒</div>
+            <h2 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 12px; color: #f1f5f9;">الموقع متوقف مؤقتاً</h2>
+            <p style="color: #94a3b8; font-size: 1rem; line-height: 1.8; margin-bottom: 30px;">
+                عزيزنا الطالب،<br>
+                تم إيقاف الحجز مؤقتاً من قِبل الإدارة.<br>
+                يرجى المتابعة لاحقاً أو التواصل مع المشرف.
+            </p>
+            <div style="width: 60px; height: 3px; background: #10b981; border-radius: 99px; margin: 0 auto;"></div>
+        </div>
+    </div>
+    <!-- ========================================= -->
+
 
     <!-- Offline Notification Banner -->
     <div id="offline-bar" class="offline-bar">
